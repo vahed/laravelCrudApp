@@ -68,8 +68,6 @@ export default {
         }
 
         function updateStatus(todo){
-            console.log(todo)
-
             Inertia.put('/todos/'+todo.id+'/update', todo);
         }
         function deleteTodo(todo){
