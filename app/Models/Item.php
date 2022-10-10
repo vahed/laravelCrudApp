@@ -25,4 +25,12 @@ class Item extends Model
     protected $fillable = [
         'subject', 'description', 'priority', 'start_at', 'finish_at'
     ];
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user_item()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

@@ -5,19 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class ToDoItemController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Inertia\Response
      */
     public function index()
     {
-        $item  = Item::orderBy('start_at', 'asc')->get();//orderBy('start_at', 'asc');
+        $item  = Item::orderBy('start_at', 'asc')->get();
 
-        return response()->json(["date" => $item]);
+        return Inertia::render('Todo', [
+            'todoItems' => $item
+        ]);
     }
 
     /**
@@ -34,15 +38,22 @@ class ToDoItemController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Routing\Redirector
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'subject' => 'required'
+        ]);
+
+        $todo['user_id'] = auth()->user()->id;
+
         $newItem = new Item;
+        $newItem->user_id = $todo['user_id'];
         $newItem->subject = $request->subject;
         $newItem->save();
 
-        return response()->json(["data" => "New line is added"]);
+        return redirect('todos');
     }
 
     /**
@@ -72,40 +83,36 @@ class ToDoItemController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return
      */
     public function update(Request $request, $id)
     {
-        $existingItem = Item::find($id);
 
-        if($existingItem){
-            $existingItem->subject = $request->subject;
-            $existingItem->description = $request->description;
-            $existingItem->priority = $request->priority;
-            $existingItem->finish_at = Carbon::now();
-            $existingItem->save();
+        $todo = json_decode($request->getContent());
 
-            return response()->json(['data' => "Record is updated"]);
-        }
-        return response()->json(['data' => "Item not found"]);
+        $existingItem = Item::findOrFail($id);
+
+        $existingItem->subject = $todo->subject;
+        $existingItem->description = $todo->description;
+        $existingItem->priority = $todo->priority;
+        $existingItem->finish_at = Carbon::now();
+        $existingItem->save();
+
+        return Redirect::route('todos');
     }
 
     /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Routing\Redirector
      */
     public function destroy($id)
     {
         $existingItem = Item::find($id);
 
-        if($existingItem){
-            $existingItem->delete();
+        $existingItem->delete();
 
-            return response()->json(['data' => "Item is deleted"]);
-        }
-
-        return response()->json(['data' => "Item not found"]);
+        return redirect('todos');
     }
 }
